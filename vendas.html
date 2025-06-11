@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600&display=swap" rel="stylesheet">
+  <title>Controle de Vendas - StockView</title>
+  <style>
+    :root {
+      --areia: #FDEDDD;
+      --bege: #E9D8C5;
+      --marrom-claro: #C8A97E;
+      --azul-suave: #A8C5DA;
+      --verde-oliva-claro: #CFE3D8;
+    }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Quicksand', sans-serif;
+    }
+    body {
+      background: linear-gradient(135deg, var(--areia), var(--verde-oliva-claro), var(--azul-suave));
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .glass-container {
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+      padding: 40px;
+      width: 100%;
+      max-width: 960px;
+      margin: auto;
+    }
+    h1, h2, h3 {
+      color: #5d4b3c;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    form, .content {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    input, select, textarea {
+      padding: 12px;
+      border-radius: 8px;
+      border: none;
+      font-size: 1rem;
+      background: rgba(255,255,255,0.35);
+    }
+    button {
+      padding: 12px;
+      background-color: var(--marrom-claro);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #b68b60;
+    }
+    .log {
+      display: block;
+      margin: 20px;
+      text-align: center;
+    }
+    nav {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    nav a {
+      margin: 0 10px;
+      color: #5d4b3c;
+      font-weight: bold;
+      text-decoration: none;
+    }
+    nav a:hover {
+      text-decoration: underline;
+    }
+    table {
+      width: 100%;
+      margin-top: 20px;
+      border-collapse: collapse;
+      background: white;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <script>
+    if (localStorage.getItem("authenticated") !== "true") {
+      window.location.href = "login.html";
+    }
+  </script>
+
+  
+  <div class="glass-container">
+    <nav>
+      <a href="menu.html">Início</a>
+      <a href="index.html">Estoque</a>
+      <a href="vendas.html">Vendas</a>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="login.html">Sair</a>
+    </nav>
+    <h2>Controle de Vendas</h2>
+    <form id="sale-form">
+      <label for="product"> Produtos disponíveis:</label>
+      <select id="product" required></select>
+      <input type="number" id="quantity" placeholder="Quantidade" required>
+      <label for="price">Valor unitário:</label>
+      <input type="number" id="price" placeholder="Preço unitário" required>
+      <label for="saleDate">Data da Venda:</label>
+      <input type="date" id="saleDate" required>
+      <button type="submit">Registrar Venda</button>
+    </form>
+    <table>
+      <thead>
+        <tr><th>Produto</th><th>Qtd</th><th>Preço</th><th>Total</th><th>Data</th></tr>
+      </thead>
+      <tbody id="sales-table-body"></tbody>
+    </table>
+  
+  </div>
+  <script>
+    function logout() {
+      localStorage.removeItem("authenticated");
+      window.location.href = "login.html";
+    }
+
+    const form = document.getElementById("sale-form");
+    const productSelect = document.getElementById("product");
+    const quantityInput = document.getElementById("quantity");
+    const priceInput = document.getElementById("price");
+    // Captura o campo de data
+    const saleDateInput = document.getElementById("saleDate");
+
+    let sales = JSON.parse(localStorage.getItem("sales") || "[]");
+    let products = JSON.parse(localStorage.getItem("products") || "[]");
+
+    // Carrega produtos no <select>
+    function populateProductSelect() {
+      productSelect.innerHTML = "";
+      products.forEach((product, index) => {
+      const option = document.createElement("option");
+      option.value = index;
+      option.textContent = `${product.name} (Qtd: ${product.quantity})`;
+      productSelect.appendChild(option);
+      });
+      updatePriceFromProduct();
+    }
+
+    // Atualiza preço automaticamente com base no produto selecionado
+    function updatePriceFromProduct() {
+      const selectedIndex = productSelect.value;
+      if (selectedIndex !== "" && products[selectedIndex]) {
+      priceInput.value = products[selectedIndex].price.toFixed(2);
+      }
+    }
+
+    productSelect.addEventListener("change", updatePriceFromProduct);
+
+    // Lógica de venda
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const productIndex = parseInt(productSelect.value);
+      const quantity = parseInt(quantityInput.value);
+      const product = products[productIndex];
+
+      if (quantity > product.quantity) {
+      alert("Quantidade insuficiente no estoque!");
+      return;
+      }
+
+      const price = parseFloat(priceInput.value);
+      const total = quantity * price;
+      // Captura a data
+      const saleDate = saleDateInput.value;
+
+      // Registrar venda (inclui a data)
+      sales.push({
+      product: product.name,
+      quantity,
+      price,
+      total,
+      date: saleDate // Adiciona a data ao objeto de venda
+      });
+
+      // Atualizar estoque
+      products[productIndex].quantity -= quantity;
+
+      // Salvar dados atualizados
+      localStorage.setItem("sales", JSON.stringify(sales));
+      localStorage.setItem("products", JSON.stringify(products));
+
+      form.reset();
+      populateProductSelect();
+      renderSales();
+    });
+
+    function renderSales() {
+      const tbody = document.getElementById("sales-table-body");
+      tbody.innerHTML = "";
+      sales.forEach((sale, index) => {
+      tbody.innerHTML += `<tr>
+              <td>${sale.product}</td>
+              <td>${sale.quantity}</td>
+              <td>R$ ${sale.price.toFixed(2)}</td>
+              <td>R$ ${sale.total.toFixed(2)}</td>
+              <td>${sale.date}</td>
+              <td><button onclick="deleteProduct(${index})">🗑️</button></td>
+            </tr>`;
+      });
+    }
+
+    function deleteProduct(index) {
+      if (confirm("Tem certeza que deseja excluir esta venda?")) {
+      const sale = sales[index];
+
+      // Devolve a quantidade ao estoque
+      const prodIndex = products.findIndex(p => p.name === sale.product);
+      if (prodIndex !== -1) {
+        products[prodIndex].quantity += sale.quantity;
+        localStorage.setItem("products", JSON.stringify(products));
+      }
+
+      sales.splice(index, 1);
+      localStorage.setItem("sales", JSON.stringify(sales));
+      renderSales();
+      populateProductSelect();
+      }
+    }
+
+    populateProductSelect();
+    renderSales();
+
+        
+  </script>
+
+</body>
+</html>

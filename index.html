@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Estoque - StockView</title>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600&display=swap" rel="stylesheet">
+    <title>Controle de Estoque - StockView</title>
+    <style>
+        :root {
+            --areia: #FDEDDD;
+            --bege: #E9D8C5;
+            --marrom-claro: #C8A97E;
+            --azul-suave: #A8C5DA;
+            --verde-oliva-claro: #CFE3D8;
+        }
+
+        * {
+            margin: 0;
+            padding: 10px;
+            box-sizing: border-box;
+            font-family: 'Quicksand', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--areia), var(--verde-oliva-claro), var(--azul-suave));
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        h1,
+        h2,
+        h3 {
+            color: #5d4b3c;
+            margin-bottom: 20px;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        form,
+        .content {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        input,
+        select,
+        textarea {
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            font-size: 1rem;
+            background: rgba(255, 255, 255, 0.35);
+        }
+
+        button {
+            margin-top: 10px;
+            padding: 12px;
+            background-color: var(--marrom-claro);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color #b68b60;
+        }
+
+        button:hover {
+            background-color: #b68b60;
+        }
+
+        .glass-container {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+            padding: 40px;
+            width: 100%;
+            max-width: 960px;
+            margin: auto;
+        }
+
+        nav {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        nav a {
+            margin: 0 10px;
+            color: #5d4b3c;
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        nav a:hover {
+            text-decoration: underline;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+
+        img {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+        }
+
+        /* Estilos para o filtro */
+        .filter-container {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+    </style>
+</head>
+
+<body>
+    <script>
+        if (localStorage.getItem("authenticated") !== "true") {
+            window.location.href = "login.html";
+        }
+    </script>
+    <div class="glass-container">
+        <nav>
+            <a href="menu.html">Início</a>
+            <a href="index.html">Estoque</a>
+            <a href="vendas.html">Vendas</a>
+            <a href="dashboard.html">Dashboard</a>
+            <a href="login.html">Sair</a>
+            <h2>Controle de Estoque</h2>
+        </nav>
+
+        <div class="filter-container">
+            <input type="text" id="filter" placeholder="Filtrar por nome ou categoria" size="50">
+        </div>
+
+        <form class=".content" id="product-form">
+            <input type="text" id="name" placeholder="Nome do produto" required>
+            <input type="text" id="category" placeholder="Categoria" required>
+            <input type="number" id="price" placeholder="Preço" required>
+            <input type="number" id="quantity" placeholder="Quantidade" required>
+            <input type="file" id="image" accept="image/*">
+            <input type="hidden" id="index">
+            <button type="submit">Salvar</button>
+        </form>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Imagem</th>
+                    <th>Nome</th>
+                    <th>Categoria</th>
+                    <th>Preço</th>
+                    <th>Qtd</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="product-table-body">
+            </tbody>
+        </table>
+
+        <button onclick="logout()">Sair
+        </button>
+    </div>
+    <script>
+        function logout() {
+            localStorage.removeItem("authenticated");
+            window.location.href = "login.html";
+        }
+
+        const form = document.getElementById("product-form");
+        const nameInput = document.getElementById("name");
+        const categoryInput = document.getElementById("category");
+        const priceInput = document.getElementById("price");
+        const quantityInput = document.getElementById("quantity");
+        const imageInput = document.getElementById("image");
+        const indexInput = document.getElementById("index");
+        const filterInput = document.getElementById("filter"); // Input de filtro
+
+        let products = JSON.parse(localStorage.getItem("products") || "[]");
+
+        form.addEventListener("submit", function(e) {
+            e.preventDefault();
+            const file = imageInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function() {
+                const product = {
+                    name: nameInput.value,
+                    category: categoryInput.value,
+                    price: parseFloat(priceInput.value),
+                    quantity: parseInt(quantityInput.value),
+                    image: reader.result || null
+                };
+                const index = indexInput.value;
+                if (index === "") {
+                    products.push(product);
+                } else {
+                    products[index] = product;
+                    indexInput.value = "";
+                }
+                localStorage.setItem("products", JSON.stringify(products));
+                form.reset();
+                renderTable();
+            };
+
+            if (file) {
+                reader.readAsDataURL(file);
+            } else {
+                const product = {
+                    name: nameInput.value,
+                    category: categoryInput.value,
+                    price: parseFloat(priceInput.value),
+                    quantity: parseInt(quantityInput.value),
+                    image: null
+                };
+                const index = indexInput.value;
+                if (index === "") {
+                    products.push(product);
+                } else {
+                    products[index] = product;
+                    indexInput.value = "";
+                }
+                localStorage.setItem("products", JSON.stringify(products));
+                form.reset();
+                renderTable();
+            }
+        });
+
+        function renderTable() {
+            const tbody = document.getElementById("product-table-body");
+            tbody.innerHTML = "";
+
+            const filterText = filterInput.value.toLowerCase(); // Texto do filtro
+
+            products.forEach((product, index) => {
+                // Aplica o filtro
+                if (product.name.toLowerCase().includes(filterText) || product.category.toLowerCase().includes(filterText)) {
+                    const imgTag = product.image ? `<img src="${product.image}">` : "—";
+                    tbody.innerHTML += `<tr>
+                        <td>${imgTag}</td>
+                        <td>${product.name}</td>
+                        <td>${product.category}</td>
+                        <td>R$ ${product.price.toFixed(2)}</td>
+                        <td>${product.quantity}</td>
+                        <td>
+                            <button onclick="editProduct(${index})">✏️</button>
+                            <button onclick="deleteProduct(${index})">🗑️</button>
+                        </td>
+                    </tr>`;
+                }
+            });
+        }
+
+        function editProduct(index) {
+            const product = products[index];
+            nameInput.value = product.name;
+            categoryInput.value = product.category;
+            priceInput.value = product.price;
+            quantityInput.value = product.quantity;
+            indexInput.value = index;
+        }
+
+        function deleteProduct(index) {
+            if (confirm("Tem certeza que deseja excluir este produto?")) {
+                products.splice(index, 1);
+                localStorage.setItem("products", JSON.stringify(products));
+                renderTable();
+            }
+        }
+
+        // Adiciona um event listener para o input de filtro
+        filterInput.addEventListener("input", renderTable);
+
+        renderTable();
+    </script>
+</body>
+
+</html>

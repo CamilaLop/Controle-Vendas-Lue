@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login - StockView</title>
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --areia: #FDEDDD;
+      --bege: #E9D8C5;
+      --marrom-claro: #C8A97E;
+      --azul-suave: #A8C5DA;
+      --verde-oliva-claro: #CFE3D8;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Quicksand', sans-serif;
+    }
+
+    body {
+      background: linear-gradient(135deg, var(--areia), var(--verde-oliva-claro), var(--azul-suave));
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background-size: 200% 200%;
+      animation: colors 15s ease;
+    }
+
+    .login-container {
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+      padding: 40px;
+      width: 100%;
+      max-width: 380px;
+    }
+
+    .login-container h2 {
+      text-align: center;
+      color: #5d4b3c;
+      margin-bottom: 24px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-top: 5px;
+      margin-bottom: 6px;
+      color: #5f4d3b;
+      font-weight: 600;
+    }
+
+    input[type="text"],
+    input[type="password"] {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      background-color: rgba(255, 255, 255, 0.35);
+      color: #2e2e2e;
+      font-size: 16px;
+      backdrop-filter: blur(3px);
+    }
+
+    input::placeholder {
+      color: #6a6a6a;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: var(--marrom-claro);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #b68b60;
+    }
+
+    .footer-text {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 14px;
+      color: #5d4b3c;
+    }
+
+    .footer-text a {
+      color: var(--azul-suave);
+      text-decoration: none;
+    }
+
+    .footer-text a:hover {
+      text-decoration: underline;
+    }
+    .error {
+      color: red;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+     @keyframes colors {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <h2>Bem-vindo de volta</h2>
+      <div class="form-group">
+	<label for="username">Usuário</label>
+        <input type="text" id="username" placeholder="Usuário" required>
+	<label for="password">Senha</label>
+        <input type="password" id="password" placeholder="Senha" required>
+      </div>      
+    <button onclick="login()">Entrar</button>
+    <div class="error" id="error-msg"></div>
+  </div>
+
+  <script>
+    function login() {
+      const user = document.getElementById("username").value;
+      const pass = document.getElementById("password").value;
+      const errorMsg = document.getElementById("error-msg");
+
+      const _0x4a2f=['admin','1234'];const validUser=_0x4a2f[0];const validPass=_0x4a2f[1];
+    
+
+      if (user === validUser && pass === validPass) {
+        localStorage.setItem("authenticated", "true");
+        window.location.href = "menu.html";
+      } else {
+        errorMsg.textContent = "Usuário ou senha inválidos.";
+      }
+    }
+  </script>
+</body>
+</html>

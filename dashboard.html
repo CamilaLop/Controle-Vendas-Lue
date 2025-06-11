@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard - StockView</title>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+      :root {
+        --areia: #FDEDDD;
+        --bege: #E9D8C5;
+        --marrom-claro: #C8A97E;
+        --azul-suave: #A8C5DA;
+        --verde-oliva-claro: #CFE3D8;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: 'Quicksand', sans-serif;
+      }
+      body {
+        background: linear-gradient(135deg, var(--areia), var(--verde-oliva-claro), var(--azul-suave));
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+      .glass-container {
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+        padding: 40px;
+        width: 100%;
+        max-width: 960px;
+      }
+      h1 {
+        text-align: center;
+        color: #5d4b3c;
+        margin-bottom: 20px;
+      }
+      nav {
+        text-align: center;
+        margin-bottom: 20px;
+      }
+      nav a {
+        margin: 0 10px;
+        color: #5d4b3c;
+        font-weight: bold;
+        text-decoration: none;
+      }
+      nav a:hover {
+        text-decoration: underline;
+      }
+      canvas {
+        margin-top: 30px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 0 5px rgba(0,0,0,0.1);
+      }
+      .resumo {
+        display: flex;
+        justify-content: space-around;
+        margin: 20px 0;
+        text-align: center;
+      }
+      .resumo div {
+        background: rgba(255,255,255,0.35);
+        padding: 15px 25px;
+        border-radius: 12px;
+        font-weight: bold;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      }
+      .acoes {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 20px;
+        flex-wrap: wrap;
+      }
+      .acoes button {
+        padding: 10px 16px;
+        background-color: var(--marrom-claro);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+      }
+      .acoes button:hover {
+        background-color: #b68b60;
+      }
+
+      /* Estilos para as abas */
+      .tab-container {
+        margin-bottom: 20px;
+      }
+
+      .tab-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        margin-bottom: 20px;
+      }
+
+      .tab-button {
+        padding: 10px 16px;
+        background-color: var(--marrom-claro);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.3s ease-in-out;
+      }
+
+      .tab-button:hover {
+        background-color: #b68b608e;
+        scale: 1.1;
+    
+      }
+
+      .tab-content {
+        display: none;
+      }
+
+      .tab-content.active {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <script>
+      if (localStorage.getItem("authenticated") !== "true") {
+        window.location.href = "login.html";
+      }
+    </script>
+
+    <div class="glass-container" id="dashboard">
+      <nav>
+        <a href="menu.html">Início</a>
+        <a href="index.html">Estoque</a>
+        <a href="vendas.html">Vendas</a>
+        <a href="dashboard.html">Dashboard</a>
+        <a href="login.html">Sair</a>
+      </nav>
+      <h1>Dashboard de Vendas e Estoque</h1>
+
+      <div class="resumo">
+        <div id="resumoProdutos">Produtos: 0</div>
+        <div id="resumoVendas">Total em Vendas: R$ 0,00</div>
+      </div>
+
+      <div class="tab-container">
+        <div class="tab-buttons">
+          <button class="tab-button" onclick="openTab('estoque')">Estoque</button>
+          <button class="tab-button" onclick="openTab('vendasProduto')">Vendas por Produto</button>
+          <button class="tab-button" onclick="openTab('proporcaoVendas')">Proporção de Vendas</button>
+          <button class="tab-button" onclick="openTab('vendasTempo')">Vendas ao Longo do Tempo</button>
+        </div>
+
+        <div id="estoque" class="tab-content">
+          <canvas id="estoqueChart" height="200"></canvas>
+        </div>
+
+        <div id="vendasProduto" class="tab-content">
+          <canvas id="vendasChart" height="200"></canvas>
+        </div>
+
+        <div id="proporcaoVendas" class="tab-content">
+          <canvas id="proporcaoVendasChart" height="200"></canvas>
+        </div>
+
+        <div id="vendasTempo" class="tab-content">
+          <canvas id="vendasTempoChart" height="200"></canvas>
+        </div>
+      </div>
+
+      <div class="acoes">
+        <button onclick="window.print()">🖨️ Imprimir Dashboard</button>
+        <button onclick="exportarCSV()">⬇️ Exportar Vendas (.csv)</button>
+      </div>
+    </div>
+
+    <script>
+      const produtos = JSON.parse(localStorage.getItem("products") || "[]");
+      const vendas = JSON.parse(localStorage.getItem("sales") || "[]");
+
+      const nomes = produtos.map(p => p.name);
+      const quantidades = produtos.map(p => p.quantity);
+
+      const totalProdutos = quantidades.reduce((a, b) => a + b, 0);
+      document.getElementById("resumoProdutos").textContent = `Produtos: ${totalProdutos}`;
+
+      const vendasPorProduto = {};
+      let totalVendas = 0;
+      const vendasPorData = {};
+
+      vendas.forEach(v => {
+        vendasPorProduto[v.product] = (vendasPorProduto[v.product] || 0) + v.total;
+        totalVendas += v.total;
+
+        const data = new Date(v.date).toLocaleDateString("pt-BR");
+        vendasPorData[data] = (vendasPorData[data] || 0) + v.total;
+      });
+
+      document.getElementById("resumoVendas").textContent = `Total em Vendas: R$ ${totalVendas.toFixed(2)}`;
+
+      function criarGraficos() {
+        const ctx1 = document.getElementById("estoqueChart").getContext("2d");
+        new Chart(ctx1, {
+          type: "bar",
+          data: {
+            labels: nomes,
+            datasets: [{
+              label: "Estoque Atual",
+              data: quantidades,
+              backgroundColor: "#96B8DD",
+              borderColor: "#181D3A",
+              borderWidth: 1
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: { title: { display: true, text: "Estoque Atual por Produto" } },
+            scales: { y: { beginAtZero: true } }
+          }
+        });
+
+        const ctx2 = document.getElementById("vendasChart").getContext("2d");
+        new Chart(ctx2, {
+          type: "bar",
+          data: {
+            labels: Object.keys(vendasPorProduto),
+            datasets: [{
+              label: "Total Vendido (R$)",
+              data: Object.values(vendasPorProduto),
+              backgroundColor: "#DA9B5C"
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: { title: { display: true, text: "Total de Vendas por Produto" } }
+          }
+        });
+
+        const ctx3 = document.getElementById("proporcaoVendasChart").getContext("2d");
+        new Chart(ctx3, {
+          type: "doughnut",
+          data: {
+            labels: Object.keys(vendasPorProduto),
+            datasets: [{
+              label: "Proporção de Vendas",
+              data: Object.values(vendasPorProduto),
+              backgroundColor: ["#DA9B5C", "#96B8DD", "#181D3A", "#FDEDDD", "#CFE3D8"]
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: { title: { display: true, text: "Proporção de Vendas por Produto" } }
+          }
+        });
+
+        const ctx4 = document.getElementById("vendasTempoChart").getContext("2d");
+        new Chart(ctx4, {
+          type: "line",
+          data: {
+            labels: Object.keys(vendasPorData),
+            datasets: [{
+              label: "Vendas ao Longo do Tempo (R$)",
+              data: Object.values(vendasPorData),
+              fill: true,
+              backgroundColor: "rgba(152, 180, 212, 0.4)",
+              borderColor: "#5d4b3c"
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: { title: { display: true, text: "Evolução de Vendas por Data" } }
+          }
+        });
+      }
+
+      function exportarCSV() {
+        let csv = "Produto,Valor (R$),Data\n";
+        vendas.forEach(v => {
+          csv += `${v.product},${v.total},${v.date}\n`;
+        });
+        const blob = new Blob([csv], { type: "text/csv" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "vendas.csv";
+        link.click();
+      }
+
+      function openTab(tabName) {
+        const tabContents = document.getElementsByClassName("tab-content");
+        for (let i = 0; i < tabContents.length; i++) {
+          tabContents[i].style.display = "none";
+        }
+        document.getElementById(tabName).style.display = "block";
+      }
+
+      // Inicialização: Exibir a aba de estoque por padrão
+      openTab('estoque');
+      criarGraficos(); // Garante que os gráficos sejam criados na inicialização
+    </script>
+  </body>
+</html>
